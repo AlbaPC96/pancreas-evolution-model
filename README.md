@@ -28,16 +28,11 @@ Este proyecto personal busca analizar la progresión del adenocarcinoma pancreá
 ## 📁 Estructura
 
 ```
-📂 data/            # Archivos CSV, mutaciones, RNA-seq
-📂 notebooks/       # Jupyter Notebooks por fase
-📂 src/             # Funciones reutilizables
-📂 results/         # Gráficos, modelos, evaluaciones
-README.md
-requirements.txt
-```
+├── data/ # Datos sin procesar y procesados
+├── notebooks/ # Análisis exploratorios en Jupyter
+├── src/ # Scripts de modelado y simulación
+└── README.md
 
-## 🧠 Lecciones aprendidas
+## 🚧 Estado actual (10.07.25)
 
-- Integración multiómica y limpieza de datos biomédicos
-- Interpretación clínica de modelos ML
-- Ciencia reproducible y documentación paso a paso
+Proyecto en fase inicial (recopilación y limpieza de datos).
