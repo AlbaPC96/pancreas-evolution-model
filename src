@@ -1,0 +1,327 @@
+import requests
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
+import seaborn as sns
+import mygene
+import json
+
+BASE_URL = "https://www.cbioportal.org/api"
+STUDY_ID = "paad_tcga"
+MUTATION_PROFILE_ID = "paad_tcga_mutations"
+GENE_EXPRESSION_PROFILE_ID = "paad_tcga_rna_seq_v2_mrna"
+
+# Obtener datos desde la API
+def get_cbioportal_data(endpoint, params=None, method="GET", body=None):
+    url = f"{BASE_URL}/{endpoint}"
+    headers = {"Accept": "application/json"}
+    if method == "POST":
+        headers["Content-Type"] = "application/json"
+        response = requests.post(url, headers=headers, data=json.dumps(body))
+    else:
+        response = requests.get(url, headers=headers, params=params)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"⚠️ Error {response.status_code} al obtener {endpoint}: {response.text}")
+        return None
+
+# Obtener datos clínicos
+def get_clinical_data():
+    data = get_cbioportal_data(f"studies/{STUDY_ID}/clinical-data")
+    if data:
+        df = pd.DataFrame(data)
+        df.to_csv("clinical_data.csv", index=False)
+        print("✅ Datos clínicos descargados y guardados.")
+        return df
+    else:
+        return None
+    
+# Obtener listas de muestras
+def get_sample_list_id():
+    lists = get_cbioportal_data(f"studies/{STUDY_ID}/sample-lists")
+    if lists:
+        return lists[0]['sampleListId']
+    return None
+
+# Obtener mutaciones
+def get_mutations(sample_list_id):
+    data = get_cbioportal_data(
+        f"molecular-profiles/{MUTATION_PROFILE_ID}/mutations",
+        params={"sampleListId": sample_list_id}
+    )
+    if data:
+        df = pd.DataFrame(data)
+        df.to_csv("mutations_data.csv", index=False)
+        print("✅ Datos de mutaciones descargados y guardados.")
+        return df
+    else:
+        return None
+
+# Obtener lista de genes
+def get_gene_list():
+    gene_data = get_cbioportal_data("genes")
+    if gene_data:
+        genes_df = pd.DataFrame(gene_data)
+        genes_df.to_csv("gene_list.csv", index=False)
+        print("✅ Lista de genes descargada y guardada.")
+        return genes_df["entrezGeneId"].tolist()
+    else:
+        print("⚠️ No se pudo obtener la lista de genes.")
+        return []
+
+# Obtener expresión génica
+def get_expression_data(sample_list_id, mutations_df):
+    """
+    Descarga la expresión génica para los genes mutados en el cohort usando POST,
+    maneja correctamente si la API devuelve lista o dict.
+    """
+    # 1) Lista de genes mutados
+    genes_mutados = sorted(mutations_df['entrezGeneId'].unique())
+    genes_mutados = [int(g) for g in genes_mutados]
+
+    body = {
+        "sampleListId": sample_list_id,
+        "entrezGeneIds": genes_mutados
+    }
+
+    # Llamada POST
+    data = get_cbioportal_data(
+        f"molecular-profiles/{GENE_EXPRESSION_PROFILE_ID}/molecular-data/fetch",
+        method="POST",
+        body=body
+    )
+
+    if not data:
+        print("⚠️ Error al obtener los datos de expresión génica.")
+        return None
+
+    # Detectar si la respuesta es dict con key "data" o ya es lista
+    if isinstance(data, dict) and "data" in data:
+        records = data["data"]
+    else:
+        records = data
+
+    df = pd.DataFrame(records)
+    df.to_csv("expression_data.csv", index=False)
+    print(f"✅ Expresión génica descargada para {len(genes_mutados)} genes y guardada.")
+    return df
+
+# Mostrar archivos generados
+def listar_archivos_generados():
+    print("\n📁 Archivos generados:")
+    for f in os.listdir():
+        if f.endswith(".csv"):
+            print(" -", f)
+            
+# Función principal
+def main():
+    clinical_df = get_clinical_data()
+    if clinical_df is None:
+        return
+
+    sample_list_id = get_sample_list_id()
+    if not sample_list_id:
+        print("⚠️ No se pudo obtener sample_list_id.")
+        return
+
+    mutations_df = get_mutations(sample_list_id)
+    if mutations_df is None:
+        return
+
+    expression_df = get_expression_data(sample_list_id, mutations_df)
+    if expression_df is None:
+        return
+    get_gene_list()
+    listar_archivos_generados()
+    print("✅ Proceso completado.")
+
+if __name__ == "__main__":
+    main()
+
+### EDA ###
+
+
+### 1. Cargar datos ###
+clinical_df = pd.read_csv("clinical_data.csv")
+mutations_df = pd.read_csv("mutations_data.csv")
+gene_expression_df = pd.read_csv("expression_data.csv")
+genes_list_df = pd.read_csv("gene_list.csv")
+
+"""
+### 2. Comprobación de tipos de datos y dimensiones ###
+print("Tipos de datos y dimensiones:")
+print("Clinical:", clinical_df.dtypes, clinical_df.shape)
+print("Mutations:", mutations_df.dtypes, mutations_df.shape)
+print("Gene Expression:", gene_expression_df.dtypes, gene_expression_df.shape)
+print("Genes List:", genes_list_df.dtypes, genes_list_df.shape)
+
+### 3. Resumen estadístico ###
+print("Resumen estadístico (clínico):")
+print(clinical_df.describe())
+print("\nResumen estadístico (mutaciones):")
+print(mutations_df.describe())
+print("\nResumen estadístico (expresión génica):")
+print(gene_expression_df.describe())
+print("\nResumen estadístico (lista de genes):")
+print(genes_list_df.describe())
+
+### 4. Comprobación de valores faltantes ###
+print("\nValores faltantes:")
+print("Clinical:", clinical_df.isnull().sum())
+print("Mutations:", mutations_df.isnull().sum())
+print("Gene Expression:", gene_expression_df.isnull().sum())
+print("Genes List:", genes_list_df.isnull().sum())
+
+### 5. Detección de registros duplicados ###
+print("\nDuplicados:")
+print("Clinical:", clinical_df.duplicated().sum())
+print("Mutations:", mutations_df.duplicated().sum())
+print("Gene Expression:", gene_expression_df.duplicated().sum())
+print("Genes List:", genes_list_df.duplicated().sum())
+
+### 6. Visualización de la distribución de los datos numéricos ###
+for df, name in zip([clinical_df, mutations_df, gene_expression_df, genes_list_df], 
+                    ["Clinical", "Mutations", "Gene Expression", "Genes List"]):
+    numerical_columns = df.select_dtypes(include=['number']).columns
+    if len(numerical_columns) > 0:
+        df[numerical_columns].hist(bins=20, figsize=(10, 8))
+        plt.suptitle(f"Histogramas de {name}")
+        plt.show()
+    else:
+        print(f"No hay columnas numéricas en {name} para graficar.")
+
+### 7. Gráficos de barras para columnas categóricas ###
+categorical_columns = {'clinical': 'clinicalAttributeId', 'mutations': 'mutationType'}
+for df, col, name in zip([clinical_df, mutations_df], categorical_columns.values(), categorical_columns.keys()):
+    if col in df.columns:
+        sns.countplot(data=df, x=col)
+        plt.title(f"Distribución de {col} en {name}")
+        plt.xticks(rotation=90)
+        plt.show()
+
+### 8. Detección de valores atípicos con boxplots ###
+for df, col, name in zip([clinical_df, mutations_df, gene_expression_df], 
+                         ['value', 'tumorAltCount', gene_expression_df.columns[1]], 
+                         ["Clinical", "Mutations", "Gene Expression"]):
+    if col in df.columns:
+        sns.boxplot(x=df[col])
+        plt.title(f"Boxplot de {col} en {name}")
+        plt.show()
+"""
+###### Selección de columnas relevantes ######
+columnas_relevantes_clinical = ['uniqueSampleKey', 'patientId', 'clinicalAttributeId', 'value']
+datos_clinicos_filtrados = clinical_df[columnas_relevantes_clinical]
+
+columnas_relevantes_mutaciones = ['entrezGeneId', 'tumorAltCount', 'tumorRefCount', 'mutationType']
+datos_mutacionales_filtrados = mutations_df[columnas_relevantes_mutaciones]
+
+columnas_relevantes_gene_expression = ['entrezGeneId', 'value']
+datos_expresion_filtrados = gene_expression_df[columnas_relevantes_gene_expression]
+
+columnas_relevantes_genes = ['entrezGeneId', 'hugoGeneSymbol']
+datos_genes_filtrados = genes_list_df[columnas_relevantes_genes]
+"""
+print(datos_clinicos_filtrados.head())
+print(datos_mutacionales_filtrados.head())
+print(datos_expresion_filtrados.head())
+print(datos_genes_filtrados.head())
+"""
+
+### Fase 1.1.2: Integrar por patientId ###
+
+# IDs únicos de pacientes
+ids_clinical = set(clinical_df['patientId'].unique())
+ids_mut = set(mutations_df['patientId'].unique())
+ids_expr = set(gene_expression_df['patientId'].unique())
+
+# Pacientes con datos completos
+ids_comunes = ids_clinical & ids_mut & ids_expr
+print(f"Número de pacientes con datos clínicos, mutacionales y de expresión: {len(ids_comunes)}")
+
+# Filtrado
+datos_clinicos_filtrados = clinical_df[clinical_df['patientId'].isin(ids_comunes)]
+datos_mutacionales_filtrados = mutations_df[mutations_df['patientId'].isin(ids_comunes)]
+datos_expresion_filtrados = gene_expression_df[gene_expression_df['patientId'].isin(ids_comunes)]
+
+### A) Pivotear datos clínicos
+clinical_pivot = datos_clinicos_filtrados.pivot_table(index='patientId', 
+                                                      columns='clinicalAttributeId', 
+                                                      values='value', 
+                                                      aggfunc='first').reset_index()
+
+# Etiquetas de clase: supervivencia
+if 'OS_STATUS' in clinical_pivot.columns and 'OS_MONTHS' in clinical_pivot.columns:
+    clinical_pivot['supervivencia_evento'] = clinical_pivot['OS_STATUS'].apply(
+        lambda x: 1 if isinstance(x, str) and 'DECEASED' in x.upper() else 0
+    )
+    clinical_pivot['tiempo_supervivencia'] = pd.to_numeric(clinical_pivot['OS_MONTHS'], errors='coerce')
+
+### B) Codificar mutaciones
+datos_mutacionales_filtrados['has_mut'] = 1
+
+mut_pivot = datos_mutacionales_filtrados.pivot_table(index='patientId',
+                                                      columns='entrezGeneId',
+                                                      values='has_mut',
+                                                      aggfunc='max',
+                                                      fill_value=0).reset_index()
+
+### C) Pivotear expresión génica
+expr_pivot = datos_expresion_filtrados.pivot_table(index='patientId',
+                                                    columns='entrezGeneId',
+                                                    values='value',
+                                                    aggfunc='mean').reset_index()
+
+### D) Mapear entrezGeneId a hugoGeneSymbol usando mygene
+# Extraer todos los entrezGeneId únicos
+entrez_ids = list(set(mut_pivot.columns[1:]) | set(expr_pivot.columns[1:]))
+
+# Inicializar cliente
+mg = mygene.MyGeneInfo()
+
+# Consultar nombres HUGO
+gene_info = mg.querymany(entrez_ids, scopes='entrezgene', fields='symbol', species='human', as_dataframe=True)
+
+# Crear diccionario de mapeo entrez -> symbol
+entrez_to_symbol = gene_info['symbol'].dropna().to_dict()
+
+# Renombrar columnas
+mut_pivot = mut_pivot.rename(columns=lambda x: entrez_to_symbol.get(x, x) if x != 'patientId' else x)
+expr_pivot = expr_pivot.rename(columns=lambda x: entrez_to_symbol.get(x, x) if x != 'patientId' else x)
+
+### E) Fusión final
+clinical_mut = pd.merge(clinical_pivot, mut_pivot, on='patientId', how='inner')
+tabla_integrada = pd.merge(clinical_mut, expr_pivot, on='patientId', how='inner')
+
+### F) Exportar
+tabla_integrada.to_csv("tabla_integrada_final_con_etiquetas.csv", index=False)
+
+print("✅ Tabla integrada guardada en 'tabla_integrada_final_con_etiquetas.csv'")
+print(f"👥 Pacientes: {tabla_integrada.shape[0]}")
+print(f"🧬 Genes mutados (renombrados): {mut_pivot.shape[1]-1}")
+print(f"🧬 Genes expresados (renombrados): {expr_pivot.shape[1]-1}")
+
+
+# Cargar lista de genes
+gene_list = pd.read_csv("gene_list.csv")
+print("🔍 Número de genes en 'gene_list.csv':", gene_list.shape[0])
+print("🔝 Primeros genes:")
+print(gene_list.head(10))
+
+# Cargar datos de expresión génica
+expression_data = pd.read_csv("expression_data.csv")
+
+# Comprobar el número de genes únicos
+num_genes = expression_data["entrezGeneId"].nunique()
+print(f"🔍 Genes únicos en 'expression_data.csv': {num_genes}")
+
+"""""
+# Verificar estructura general
+print("🧪 Shape de expression_data:", expression_data.shape)
+print("🧬 Genes más frecuentes:")
+print(expression_data["entrezGeneId"].value_counts().head())
+"""""
+df = pd.read_csv("tabla_integrada_final_con_etiquetas.csv", low_memory=False)
+print(df.head())         # Muestra las primeras 5 filas
+print(df.columns)        # Muestra los nombres de las columnas
+print(df.info())         # Muestra el tipo de dato por columna y valores no nulos
