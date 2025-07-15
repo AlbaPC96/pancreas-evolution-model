@@ -7,6 +7,7 @@ Este proyecto personal busca analizar la progresión del adenocarcinoma pancreá
 - Unificar datos clínicos, mutacionales y de expresión génica (RNA-seq)
 - Analizar dinámicas tumorales: supervivencia, mutaciones, coexpresión
 - Desarrollar modelos predictivos para progresión o recurrencia
+Esto significa que se necesita unificar los datos clínicos, mutacionales y de de expresión génica para identificar patrones dinámicos relacionados con la progresión tumoral y la respuesta terapéutica.
 
 ## 🗂️ Dataset
 
@@ -33,6 +34,29 @@ Este proyecto personal busca analizar la progresión del adenocarcinoma pancreá
 ├── src/ # Scripts de modelado y simulación
 └── README.md
 
-## 🚧 Estado actual (10.07.25)
+## 🚧 Estado actual
+-(10.07.25)
 
 Proyecto en fase inicial (recopilación y limpieza de datos).
+-(15.07.2025)
+1. Seleccionar genes candidatos:
+- Los más conocidos en cáncer de páncreas.
+- Y/o los que tengan mayor varianza en tu dataset.
+2. Dividir pacientes por expresión génica alta/baja (por percentil o mediana).
+3. Graficar curva KM para cada gen, comparando los grupos.
+4. Evaluar significancia estadística (log-rank test).
+
+📦 Genes candidatos comunes en cáncer de páncreas
+
+Estos genes están frecuentemente mutados o desregulados en cáncer de páncreas:
+Gen	Rol principal
+KRAS	Oncogén (mutado en ~90%)
+TP53	Supresor tumoral
+CDKN2A	Ciclo celular
+SMAD4	Vía TGF-β (ya lo analizaste)
+BRCA1/2	Reparación de ADN
+ARID1A	Remodelación cromatina
+GATA6	Diferenciación pancreática
+MYC	Proliferación celular
+PTEN	Inhibidor de PI3K/AKT
+MUC1	Adhesión y señalización
