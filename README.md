@@ -27,7 +27,7 @@ Esto significa que se necesita unificar los datos clínicos, mutacionales y de d
 5. **Interpretación y conclusiones**
 
 ## 📁 Estructura
-
+````
 ├── data/ # Datos sin procesar y procesados
 ├── notebooks/ # Análisis exploratorios en Jupyter
 ├── src/ # Scripts de modelado y simulación
