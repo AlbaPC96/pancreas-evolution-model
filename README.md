@@ -34,14 +34,15 @@ Esto significa que se necesita unificar los datos clínicos, mutacionales y de d
 ├── src/ # Scripts de modelado y simulación
 └── README.md
 
-## 🚧 Estado actual
+# 🚧 **Estado actual** 
+
 -(10.07.25)
 Proyecto en fase inicial (recopilación y limpieza de datos).
 
-## 🗓️ Avance semanal (14.07.2025 – 18.07.2025)
+# 🗓️ **Avance semanal (14.07.2025 – 18.07.2025)**
 ---
 
-### 🧩 Avances
+## 🧩 **Avances**
 
 1. **Recolección y preparación de datos**
    - Descarga de clinical_data.csv, expression_data.csv, mutations_data.csv y gene_list.csv desde cBioPortal.
