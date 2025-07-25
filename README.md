@@ -36,31 +36,44 @@ Esto significa que se necesita unificar los datos clínicos, mutacionales y de d
 
 ## 🚧 Estado actual
 -(10.07.25)
-
 Proyecto en fase inicial (recopilación y limpieza de datos).
--(15.07.2025)
-1. Seleccionar genes candidatos:
-- Los más conocidos en cáncer de páncreas.
-- Los genes más mutados presentes en los pacientes con cáncer.
-- Los genes con mayor correlación con la supervivencia (calcular la correlación entre la expresión génica y la supervivencia para cada gen). Podría dar candidatos funcionales aunque no presenten mutación.
--Combinación de los anteriones métodos de selección de genes candidatos.
-2. Dividir pacientes por expresión génica alta/baja (por percentil o mediana).
-3. Graficar curva KM para cada gen, comparando los grupos.
-4. Evaluar significancia estadística (log-rank test).
 
-# Genes candidatos comunes en cáncer de páncreas según la bibliografía consultada (debo añadir la bibliografía consultada) #
+## 🗓️ Avance semanal (14.07.2025 – 18.07.2025)
+---
 
-Gen	-- Rol principal
-KRAS -- Oncogén (mutado en ~90%)
-TP53 -- Supresor tumoral
-CDKN2A -- Ciclo celular
-SMAD4	-- Vía TGF-β
-BRCA1/2	-- Reparación de ADN
-ARID1A	-- Remodelación cromatina
-GATA6	-- Diferenciación pancreática
-MYC	-- Proliferación celular
-PTEN	-- Inhibidor de PI3K/AKT
-MUC1	-- Adhesión y señalización
+### 🧩 Avances
 
-# Genes candidatos según su frecuencia de mutación presentes en los pacientes con cáncer de mis datos #
+1. **Recolección y preparación de datos**
+   - Descarga de clinical_data.csv, expression_data.csv, mutations_data.csv y gene_list.csv desde cBioPortal.
+   - Pivotado de clinical_data.csv a formato ancho por paciente.
+   - Integración final de los datasets en una tabla única con 150 pacientes.
+
+2. **Procesamiento de mutaciones**
+   - Mapeo de entrezGeneId a hugoGeneSymbol.
+   - Identificación de genes más frecuentemente mutados: KRAS, TP53, SMAD4, CDKN2A…
+   - Selección de subconjunto de genes candidatos para futuros análisis.
+
+3. **Preparación para análisis de supervivencia**
+   - Revisión y transformación de variables como `DAYS_TO_COLLECTION` y `SOMATIC_STATUS`.
+   - Conversión a meses de supervivencia estimada.
+
+4. **Estructura del código**
+   - Modularización del pipeline principal (`paad_data_access.py`)
+   - Validaciones y limpieza automática de columnas inconsistentes.
+
+---
+
+### 🧠 Reflexiones o decisiones
+
+- Mantener `gene_list.csv` actualizado como referencia cruzada.
+- Crear una función utilitaria para elegir subconjuntos de genes fácilmente.
+
+---
+
+### 🔜 Próximos pasos
+
+- Finalizar construcción de variables de supervivencia (`tiempo + evento`).
+- Empezar análisis de curvas Kaplan–Meier por gen.
+- Añadir primeros gráficos a la carpeta `/results/`.
+
 
