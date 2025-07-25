@@ -28,11 +28,11 @@ Esto significa que se necesita unificar los datos clínicos, mutacionales y de d
 
 ## 📁 Estructura
 
-```
 ├── data/ # Datos sin procesar y procesados
 ├── notebooks/ # Análisis exploratorios en Jupyter
 ├── src/ # Scripts de modelado y simulación
 └── README.md
+
 
 ## 🚧 **Estado actual** 
 
@@ -40,7 +40,6 @@ Esto significa que se necesita unificar los datos clínicos, mutacionales y de d
 Proyecto en fase inicial (recopilación y limpieza de datos).
 
 ## 🗓️ **Avance semanal (14.07.2025 – 18.07.2025)**
----
 
 ### 🧩 **Avances**
 
